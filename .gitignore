@@ -1,0 +1,24 @@
+# API keys - nunca commitear
+meshy_generate.py
+blender_*.py
+.env
+*.env
+
+# Godot
+nuevo-proyecto-de-juego/.godot/
+nuevo-proyecto-de-juego/**/*.import
+
+# Exportados web (se regeneran)
+exports/
+
+# Modelos grandes de Meshy (solo conservar los finales)
+nuevo-proyecto-de-juego/assets/models/*_refined.glb
+nuevo-proyecto-de-juego/assets/models/019*.glb
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
