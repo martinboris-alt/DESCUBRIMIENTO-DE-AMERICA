@@ -1,6 +1,6 @@
 # API keys - nunca commitear
-meshy_generate.py
-blender_*.py
+/meshy_generate.py
+/blender_*.py
 .env
 *.env
 
