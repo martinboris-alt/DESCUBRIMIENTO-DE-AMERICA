@@ -1,7 +1,0 @@
-[gd_scene format=3 uid="uid://bh6k4miyige3y"]
-
-[ext_resource type="PackedScene" uid="uid://conquistador_glb" path="res://assets/models/conquistador.glb" id="1_model"]
-
-[node name="ConquistadorModel" type="Node3D"]
-
-[node name="Model" parent="." instance=ExtResource("1_model")]

@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://pyramid0001"]
-
-[ext_resource type="Script" path="res://scripts/pyramid.gd" id="1_pyramid"]
-
-[node name="Pyramid" type="StaticBody3D"]
-script = ExtResource("1_pyramid")

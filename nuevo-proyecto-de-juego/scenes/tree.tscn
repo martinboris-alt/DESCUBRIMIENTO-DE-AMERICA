@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://tree000001"]
-
-[ext_resource type="PackedScene" path="res://assets/models/jungle_tree.glb" id="1_tree"]
-
-[node name="Tree" type="Node3D"]
-
-[node name="Model" parent="." instance=ExtResource("1_tree")]
-transform = Transform3D(0.08, 0, 0, 0, 0.08, 0, 0, 0, 0.08, 0, 0, 0)
