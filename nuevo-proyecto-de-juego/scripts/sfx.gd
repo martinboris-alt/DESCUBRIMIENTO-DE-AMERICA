@@ -40,7 +40,7 @@ func _ready() -> void:
 		stream.loop_begin = 0
 		stream.loop_end = stream.data.size() / 2
 		_ambient.stream = stream
-		_ambient.volume_db = -10.0
+		_ambient.volume_db = -20.0
 	add_child(_ambient)
 	_ambient.play()
 

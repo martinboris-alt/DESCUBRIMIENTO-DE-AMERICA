@@ -10,6 +10,7 @@ const CREAM := Color(0.96, 0.92, 0.8)
 const JADE := Color(0.3, 0.9, 0.55)
 
 var _coin_label: Label
+var _coin_icon: Polygon2D
 var _lives_label: Label
 var _hearts: Array[Polygon2D] = []
 var _idol_slots: Array[Polygon2D] = []
@@ -95,6 +96,7 @@ func _build() -> void:
 	coin_inner.polygon = _circle_points(8)
 	coin_inner.color = Color(0.82, 0.6, 0.1)
 	coin.add_child(coin_inner)
+	_coin_icon = coin
 	_coin_label = _mk_label("x 0", Vector2(58, 16), 28, CREAM)
 
 	# ídolos
@@ -206,6 +208,8 @@ func _refresh() -> void:
 
 
 func _process(_delta: float) -> void:
+	if _coin_icon:
+		_coin_icon.scale = Vector2.ONE * (1.0 + Music.pulse() * 0.22)
 	if Game.state == Game.GState.PLAYING:
 		var m := int(Game.elapsed) / 60
 		var s := int(Game.elapsed) % 60

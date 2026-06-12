@@ -147,6 +147,11 @@ func _build_environment() -> void:
 	sun.directional_shadow_max_distance = 130.0
 	add_child(sun)
 
+	var beat_vis := Node.new()
+	beat_vis.set_script(preload("res://scripts/beat_visuals.gd"))
+	add_child(beat_vis)
+	beat_vis.setup(env, sun)
+
 
 # ── Suelo: cinta con huecos ───────────────────────────────────────────
 

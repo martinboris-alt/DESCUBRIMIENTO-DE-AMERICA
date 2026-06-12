@@ -1,0 +1,18 @@
+{
+ "music_level1": {
+  "bpm": 122,
+  "dur": 15.9377
+ },
+ "music_level2": {
+  "bpm": 138,
+  "dur": 14.113
+ },
+ "music_level3": {
+  "bpm": 128,
+  "dur": 15.2
+ },
+ "music_boss": {
+  "bpm": 144,
+  "dur": 13.5333
+ }
+}

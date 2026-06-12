@@ -81,6 +81,7 @@ func _physics_process(delta: float) -> void:
 				_state = BState.FACE
 				_timer = 1.0
 				Sfx.play("tnt_boom", -4.0)
+				Music.play_track("boss")
 				Game.message.emit("¡EL GUARDIÁN DEL TEMPLO!", 2.2)
 		BState.FACE:
 			velocity.x = 0

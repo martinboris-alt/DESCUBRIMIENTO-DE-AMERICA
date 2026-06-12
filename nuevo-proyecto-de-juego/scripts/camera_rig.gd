@@ -12,11 +12,16 @@ var player: Node3D
 var curve: Curve3D
 
 var _fwd := Vector3.FORWARD
+var _cam: Camera3D
+var _base_fov := 68.0
 
 
 func setup(p_player: Node3D, p_curve: Curve3D) -> void:
 	player = p_player
 	curve = p_curve
+	_cam = get_node_or_null("Camera3D")
+	if _cam:
+		_base_fov = _cam.fov
 	snap()
 
 
@@ -58,3 +63,7 @@ func _physics_process(delta: float) -> void:
 	var k := 1.0 - exp(-5.0 * delta)
 	global_position = global_position.lerp(_desired_pos(), k)
 	_look()
+	# golpe de FOV al ritmo de la música (sutil, da sensación de pulso)
+	if _cam:
+		var target := _base_fov + Music.pulse() * 2.6
+		_cam.fov = lerpf(_cam.fov, target, 1.0 - exp(-14.0 * delta))

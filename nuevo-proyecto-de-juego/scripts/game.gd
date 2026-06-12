@@ -51,6 +51,7 @@ func level_start() -> void:
 	elapsed = 0.0
 	boss_hp = -1
 	boss_max = 0
+	Music.play_track("level%d" % (level_index + 1))
 	hud_changed.emit()
 	state_changed.emit(state)
 	get_tree().create_timer(3.2).timeout.connect(_begin_play)

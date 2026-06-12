@@ -39,6 +39,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	rotation.y += 3.2 * delta
+	if not _taken:
+		var s := 1.0 + Music.pulse() * 0.28
+		scale = scale.lerp(Vector3.ONE * s, 1.0 - exp(-18.0 * delta))
 
 
 func _on_body(body: Node3D) -> void:
