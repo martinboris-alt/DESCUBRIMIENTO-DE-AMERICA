@@ -29,8 +29,8 @@ func _ready() -> void:
 	await get_tree().process_frame
 	if _visuals:
 		anim.setup(_visuals)
-		_tint_meshes(_visuals)
-		_add_headdress()
+		# el guerrero jaguar ya tiene su propia identidad visual:
+		# nada de tinte ni penacho procedural
 
 
 func _tint_meshes(node: Node) -> void:

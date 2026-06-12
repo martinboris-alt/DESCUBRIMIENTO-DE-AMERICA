@@ -30,7 +30,7 @@ func _phase() -> int:
 func _ready() -> void:
 	add_to_group("enemy")
 	add_to_group("boss")
-	_visuals = preload("res://assets/models/conquistador_lowpoly.glb").instantiate()
+	_visuals = preload("res://assets/models/boss_guardian.glb").instantiate()
 	_visuals.name = "Visuals"
 	_visuals.scale = Vector3.ONE * 2.4
 	add_child(_visuals)
@@ -44,7 +44,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	anim.setup(_visuals)
-	_tint(_visuals)
+	# el golem guardián ya tiene su propio aspecto de piedra/jade
 	Game.set_boss(hp, MAX_HP)
 
 

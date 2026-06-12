@@ -494,7 +494,7 @@ func _build_enemies() -> void:
 	for e in def.enemies:
 		var enemy := CharacterBody3D.new()
 		enemy.set_script(EnemyScript)
-		var visuals: Node3D = preload("res://assets/models/conquistador_lowpoly.glb").instantiate()
+		var visuals: Node3D = preload("res://assets/models/enemy_jaguar.glb").instantiate()
 		visuals.name = "Visuals"
 		enemy.add_child(visuals)
 		var col := CollisionShape3D.new()
