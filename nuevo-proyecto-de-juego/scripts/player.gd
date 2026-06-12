@@ -196,6 +196,9 @@ func _physics_process(delta: float) -> void:
 
 	# ── Animación y pasos ─────────────────────────────────────────────
 	anim.update(hvel.length(), delta, 1.0 if _spin_t > 0.0 else 0.0)
+	# bote vertical del modelo al caminar (sólo en suelo)
+	var target_bob := absf(anim.body_bob()) * 1.6 if is_on_floor() else 0.0
+	visuals.position.y = lerpf(visuals.position.y, target_bob, 1.0 - exp(-18.0 * delta))
 	if is_on_floor() and hvel.length() > 1.0:
 		_step_t -= delta * hvel.length()
 		if _step_t <= 0.0:
