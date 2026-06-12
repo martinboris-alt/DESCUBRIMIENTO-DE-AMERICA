@@ -35,19 +35,51 @@ var _step_t := 0.0
 var _was_on_floor := true
 var _face_yaw := 0.0
 var _dead := false
+var _power_t := 0.0
+var _orbit: Node3D
+var _orbit_masks: Array[Node3D] = []
+var _power_light: OmniLight3D
 
 
 func _ready() -> void:
 	add_to_group("player")
+	_build_mask_orbit()
 	await get_tree().process_frame
 	await get_tree().process_frame
 	anim.setup(visuals)
+
+
+func _build_mask_orbit() -> void:
+	_orbit = Node3D.new()
+	_orbit.position.y = 1.5
+	add_child(_orbit)
+	for i in 2:
+		var m := MaskPickup.build_mask_mesh(0.45)
+		m.position = Vector3(0.85 if i == 0 else -0.85, 0.1 * i, 0)
+		m.visible = false
+		_orbit.add_child(m)
+		_orbit_masks.append(m)
+	_power_light = OmniLight3D.new()
+	_power_light.light_color = Color(1.0, 0.85, 0.3)
+	_power_light.light_energy = 0.0
+	_power_light.omni_range = 5.0
+	_power_light.position.y = 1.2
+	add_child(_power_light)
+
+
+func start_invincibility(dur: float) -> void:
+	_power_t = dur
+
+
+func is_powered() -> bool:
+	return _power_t > 0.0
 
 
 func teleport(pos: Vector3) -> void:
 	global_position = pos
 	velocity = Vector3.ZERO
 	_dead = false
+	_power_t = 0.0
 	if cam_rig:
 		cam_rig.snap()
 		var f: Vector3 = cam_rig.forward()
@@ -173,6 +205,20 @@ func _physics_process(delta: float) -> void:
 	# parpadeo de invulnerabilidad
 	visuals.visible = _invuln <= 0.0 or fmod(_invuln, 0.2) < 0.12
 
+	# máscaras orbitando + poder de invencibilidad
+	_power_t = maxf(_power_t - delta, 0.0)
+	_orbit.rotation.y += delta * (6.0 if _power_t > 0.0 else 1.8)
+	for i in _orbit_masks.size():
+		_orbit_masks[i].visible = Game.masks > i
+	_power_light.light_energy = 2.2 if _power_t > 0.0 else \
+		(0.0 if Game.masks == 0 else 0.4)
+	if _power_t > 0.0:
+		# tocar enemigos los elimina
+		for enemy in get_tree().get_nodes_in_group("enemy"):
+			if not enemy.dead and not enemy.is_in_group("boss") \
+					and enemy.global_position.distance_to(global_position) < 1.4:
+				enemy.spin_hit(global_position)
+
 	# ── Caída al agua ─────────────────────────────────────────────────
 	if global_position.y < DEATH_Y:
 		Game.hearts = 0
@@ -182,12 +228,16 @@ func _physics_process(delta: float) -> void:
 
 
 func take_hit(from_pos: Vector3, amount: int = 1) -> void:
-	if _invuln > 0.0 or _spin_t > 0.0 or Game.state != Game.GState.PLAYING:
+	if _invuln > 0.0 or _spin_t > 0.0 or _power_t > 0.0 \
+			or Game.state != Game.GState.PLAYING:
 		return
 	_invuln = 1.3
 	var knock := (global_position - from_pos)
 	knock.y = 0.0
 	knock = knock.normalized() if knock.length() > 0.05 else Vector3.BACK
 	velocity = knock * 4.0 + Vector3.UP * 4.0
+	if Game.consume_mask():
+		Sfx.play("bounce", -4.0)
+		return
 	Sfx.play("hurt")
 	Game.hurt(amount)

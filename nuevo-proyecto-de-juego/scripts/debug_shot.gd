@@ -12,6 +12,8 @@ var _tp_done := false
 var _jump_held := false
 var _air_jumped := false
 var _close := false
+var _bosstest := false
+var _tp_boss_done := false
 
 
 func _ready() -> void:
@@ -27,6 +29,11 @@ func _ready() -> void:
 			_auto = true
 		elif arg == "--close":
 			_close = true
+		elif arg == "--bosstest":
+			_bosstest = true
+	if _bosstest:
+		Game.level_index = 2
+		_auto = true
 	set_process(not _targets.is_empty() or _auto)
 	set_physics_process(_auto)
 
@@ -39,6 +46,16 @@ func _process(_delta: float) -> void:
 		if rig:
 			rig.dist = 3.0
 			rig.height = 1.4
+
+	if _bosstest and not _tp_boss_done and Game.state == Game.GState.PLAYING:
+		_tp_boss_done = true
+		Game.lives = 20
+		var main := get_tree().current_scene
+		if main and Game.player:
+			Game.player.teleport(main._pos(main.clen - 5.0, 0.0, 1.5))
+			var rig := main.get_node_or_null("CameraRig")
+			if rig:
+				rig.setup(Game.player, main.curve)
 
 	if _tp >= 0.0 and not _tp_done and Game.state == Game.GState.PLAYING:
 		_tp_done = true
@@ -56,27 +73,36 @@ func _process(_delta: float) -> void:
 
 	if _auto:
 		if _frame % 600 == 0:
-			_capture("%s/auto_f%d.png" % [_out, _frame])
+			_capture("%s/auto_L%d_f%d.png" % [_out, Game.level_index + 1, _frame])
 		if _frame % 120 == 0:
 			var d := -1.0
 			var main := get_tree().current_scene
 			if main and Game.player:
 				d = main.curve.get_closest_offset(Game.player.global_position)
-			print("PROGRESS f=%d d=%.1f vidas=%d corazones=%d monedas=%d idolos=%d estado=%d" %
-				[_frame, d, Game.lives, Game.hearts, Game.coins, Game.idols, Game.state])
-		if Game.state == Game.GState.WIN:
-			print("BOT_WIN f=%d t=%.1fs monedas=%d idolos=%d" %
-				[_frame, Game.elapsed, Game.coins, Game.idols])
+			print("PROGRESS L%d f=%d d=%.1f vidas=%d cor=%d mon=%d idolos=%d masc=%d jefe=%d estado=%d" %
+				[Game.level_index + 1, _frame, d, Game.lives, Game.hearts,
+				Game.coins, Game.idols, Game.masks, Game.boss_hp, Game.state])
+		if Game.state == Game.GState.LEVEL_DONE:
+			print("BOT_LEVEL_DONE L%d f=%d t=%.1fs monedas=%d idolos=%d" %
+				[Game.level_index + 1, _frame, Game.elapsed, Game.coins, Game.idols])
+			_capture("%s/auto_L%d_done.png" % [_out, Game.level_index + 1])
+			_jump_held = false
+			_air_jumped = false
+			await get_tree().create_timer(0.4).timeout
+			Game.advance_level()
+		elif Game.state == Game.GState.WIN:
+			print("BOT_WIN f=%d t=%.1fs monedas=%d idolos_tot=%d" %
+				[_frame, Game.total_time, Game.coins, Game.idols_total])
 			_capture("%s/auto_win.png" % _out)
 			await get_tree().create_timer(0.5).timeout
 			get_tree().quit()
 		elif Game.state == Game.GState.GAMEOVER:
-			print("BOT_GAMEOVER f=%d monedas=%d" % [_frame, Game.coins])
+			print("BOT_GAMEOVER L%d f=%d monedas=%d" % [Game.level_index + 1, _frame, Game.coins])
 			_capture("%s/auto_gameover.png" % _out)
 			await get_tree().create_timer(0.5).timeout
 			get_tree().quit()
-		elif _frame > 18000:
-			print("BOT_TIMEOUT")
+		elif _frame > 30000:
+			print("BOT_TIMEOUT L%d" % [Game.level_index + 1])
 			get_tree().quit()
 
 
@@ -88,6 +114,12 @@ func _physics_process(_delta: float) -> void:
 		return
 	var player: CharacterBody3D = Game.player
 	var d: float = main.curve.get_closest_offset(player.global_position)
+
+	# ── Modo jefe: si hay jefe y estamos cerca del final, ir a por él ──
+	var boss = get_tree().get_first_node_in_group("boss")
+	if boss and not boss.dead and d > main.clen - 12.0:
+		_fight_boss(player, boss)
+		return
 
 	Input.action_press("move_forward")
 
@@ -139,6 +171,35 @@ func _physics_process(_delta: float) -> void:
 		Input.action_press("attack")
 	elif _frame % 70 == 2:
 		Input.action_release("attack")
+
+
+func _fight_boss(player: CharacterBody3D, boss: Node3D) -> void:
+	# se mueve hacia el jefe en coordenadas de cámara y le ataca sin parar
+	for a in ["move_forward", "move_back", "move_left", "move_right"]:
+		Input.action_release(a)
+	var rig = get_tree().current_scene.get_node_or_null("CameraRig")
+	var cam_fwd: Vector3 = rig.forward() if rig else Vector3.FORWARD
+	var cam_right := cam_fwd.cross(Vector3.UP).normalized()
+	var to_boss := boss.global_position - player.global_position
+	to_boss.y = 0.0
+	if to_boss.length() > 2.0:
+		var f := to_boss.normalized()
+		var fd := f.dot(cam_fwd)
+		var rd := f.dot(cam_right)
+		if fd > 0.3: Input.action_press("move_forward")
+		elif fd < -0.3: Input.action_press("move_back")
+		if rd > 0.3: Input.action_press("move_right")
+		elif rd < -0.3: Input.action_press("move_left")
+	# atacar en bucle (los giros solo dañan al jefe aturdido)
+	if _frame % 36 < 18:
+		Input.action_press("attack")
+	else:
+		Input.action_release("attack")
+	# saltitos para esquivar embestidas
+	if _frame % 90 == 0:
+		Input.action_press("jump")
+	elif _frame % 90 == 4:
+		Input.action_release("jump")
 
 
 func _capture(path: String) -> void:

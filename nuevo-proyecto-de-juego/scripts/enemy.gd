@@ -11,6 +11,7 @@ const TINT := Color(1.0, 0.72, 0.48)
 
 var home := Vector3.ZERO
 var patrol_vec := Vector3.RIGHT * 2.5
+var speed_mult := 1.0
 
 var anim := CharAnim.new()
 var dead := false
@@ -93,7 +94,7 @@ func _physics_process(delta: float) -> void:
 		var dist := to_player.length()
 		if dist < AGGRO and absf(to_player.y) < 2.5:
 			var flat := Vector3(to_player.x, 0, to_player.z).normalized()
-			target_vel = flat * CHASE
+			target_vel = flat * CHASE * speed_mult
 			if dist < CONTACT_R and _hit_cd <= 0.0:
 				_hit_cd = 1.1
 				player.take_hit(global_position)
@@ -102,7 +103,7 @@ func _physics_process(delta: float) -> void:
 			var to_goal := goal - global_position
 			to_goal.y = 0.0
 			if to_goal.length() > 0.3:
-				target_vel = to_goal.normalized() * WALK
+				target_vel = to_goal.normalized() * WALK * speed_mult
 
 	velocity.x = move_toward(velocity.x, target_vel.x, 18.0 * delta)
 	velocity.z = move_toward(velocity.z, target_vel.z, 18.0 * delta)

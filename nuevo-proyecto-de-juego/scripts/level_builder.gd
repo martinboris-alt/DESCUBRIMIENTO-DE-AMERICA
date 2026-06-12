@@ -1,6 +1,7 @@
 extends Node3D
-## Construye el nivel completo "La Senda del Templo": una senda de jungla
-## estilo Crash Bandicoot desde la playa hasta el templo azteca.
+## Construye el nivel actual de la campaña (datos en level_data.gd):
+## senda estilo Crash con huecos, jungla, cajas, enemigos, máscaras...
+## y según el nivel: bola perseguidora o jefe final.
 
 const TREE_SCENE := preload("res://assets/models/jungle_tree_opt.glb")
 const RUIN_SCENE := preload("res://assets/models/ruin_column_opt.glb")
@@ -13,70 +14,24 @@ const IdolScript := preload("res://scripts/idol.gd")
 const CheckpointScript := preload("res://scripts/checkpoint.gd")
 const SpikeScript := preload("res://scripts/spike_trap.gd")
 const EnemyScript := preload("res://scripts/enemy.gd")
+const MaskScript := preload("res://scripts/mask.gd")
+const BoulderScript := preload("res://scripts/boulder.gd")
+const BossScript := preload("res://scripts/boss.gd")
 
 const HALF_W := 3.5
-const SKIRT := 5.0
 const WATER_Y := -2.3
 
-const WAYPOINTS: Array[Vector3] = [
-	Vector3(0, 0.5, 10), Vector3(0, 0.5, 0), Vector3(0, 0.5, -25),
-	Vector3(8, 1.0, -50), Vector3(10, 1.5, -75), Vector3(0, 2.2, -100),
-	Vector3(-10, 2.8, -125), Vector3(-12, 3.2, -150), Vector3(-4, 5.0, -175),
-	Vector3(6, 7.0, -200), Vector3(10, 7.5, -225), Vector3(4, 5.5, -250),
-	Vector3(-6, 3.5, -275), Vector3(-8, 2.5, -300), Vector3(0, 2.0, -325),
-	Vector3(0, 2.0, -342),
-]
-const GAPS := [[70.0, 74.5], [108.0, 112.0], [148.0, 152.5],
-	[218.0, 221.5], [264.0, 269.5], [320.0, 325.0]]
-
-const COIN_RUNS := [[12.0, 6, 0.0], [35.0, 8, 0.0], [60.0, 5, 1.5],
-	[80.0, 6, -1.0], [100.0, 5, 0.0], [118.0, 6, 1.0], [140.0, 5, -1.0],
-	[160.0, 6, 0.0], [180.0, 8, 0.0], [205.0, 6, 1.5], [228.0, 5, -1.0],
-	[252.0, 6, 0.0], [275.0, 5, 1.0], [298.0, 6, -1.0], [315.0, 4, 0.0],
-	[330.0, 6, 0.0]]
-
-# [d, lat, tnt, altura_extra]
-const CRATES := [
-	[20.0, -1.5, false, 0.0], [20.0, 0.0, false, 0.0], [20.0, 1.5, false, 0.0],
-	[45.0, 1.0, false, 0.0], [45.0, 1.0, false, 0.92],
-	[85.0, -1.2, false, 0.0], [85.0, 1.2, false, 0.0], [85.0, 0.0, true, 0.0],
-	[120.0, 1.5, false, 0.0], [120.0, -1.5, false, 0.0],
-	[142.0, 0.0, false, 0.0], [142.0, -1.6, false, 0.0], [142.0, 1.6, false, 0.0],
-	[142.0, 0.0, false, 0.92],
-	[175.0, -1.0, false, 0.0], [175.0, 1.0, false, 0.0],
-	[211.0, 0.0, true, 0.0], [211.0, -1.6, false, 0.0], [211.0, 1.6, false, 0.0],
-	[255.0, -1.5, false, 0.0], [255.0, 0.0, false, 0.0], [255.0, 1.5, false, 0.0],
-	[282.0, 0.0, false, 0.0], [282.0, -1.5, false, 0.0],
-	[305.0, 0.0, true, 0.0], [305.0, -1.6, false, 0.0], [305.0, 1.6, false, 0.0],
-	[307.5, 0.0, false, 0.0],
-	[332.0, -2.0, false, 0.0], [332.0, -0.7, false, 0.0],
-	[332.0, 0.7, false, 0.0], [332.0, 2.0, false, 0.0],
-]
-
-# [d, lat, patrulla_lateral]
-const ENEMIES := [
-	[55.0, 0.0, true], [90.0, -1.5, false], [125.0, 1.5, true],
-	[160.0, 0.0, false], [185.0, -2.0, true], [200.0, 2.0, false],
-	[232.0, 0.0, true], [256.0, -1.5, false], [300.0, 1.5, true],
-	[315.0, 0.0, false], [335.0, -2.0, true], [338.0, 2.0, true],
-]
-
-const RUIN_COLUMNS := [[40.0, 5.5, 3.2], [95.0, -5.5, 2.6], [132.0, 6.5, 3.0],
-	[155.0, -5.5, 2.4], [170.0, 4.5, 3.0], [240.0, -6.5, 2.8],
-	[265.0, 5.0, 3.2], [310.0, -5.0, 2.6]]
-const RUIN_BLOCKS := [[60.0, -4.5], [150.0, 5.0], [230.0, -4.2], [300.0, 4.3]]
-
-const SPIKES := [[195.0, -1.7, 0.0], [202.0, 1.7, 0.9], [209.0, -1.7, 1.8]]
-const CHECKPOINTS := [[95.0, 2.6], [165.0, -2.6], [215.0, -2.6], [245.0, 2.6], [312.0, -2.6]]
-const IDOLS := [[130.0, 7.5, 0.8], [240.0, -7.0, 1.5], [330.0, 6.5, 1.0]]
-
+var def := {}
+var gaps := []
 var curve := Curve3D.new()
 var clen := 0.0
 var _rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
-	_rng.seed = 1519
+	def = LevelData.get_level(Game.level_index)
+	gaps = def.gaps
+	_rng.seed = 1519 + Game.level_index
 	_build_curve()
 	_build_environment()
 	_build_ground()
@@ -89,8 +44,9 @@ func _ready() -> void:
 	_build_enemies()
 	_build_checkpoints()
 	_build_idols()
+	_build_masks()
 	_build_spikes()
-	_build_temple()
+	_build_finale()
 
 	var player: CharacterBody3D = $Player
 	var rig: Node3D = $CameraRig
@@ -102,16 +58,24 @@ func _ready() -> void:
 	player.teleport(spawn)
 	rig.setup(player, curve)
 
+	if def.boulder:
+		var boulder := Node3D.new()
+		boulder.set_script(BoulderScript)
+		boulder.curve = curve
+		boulder.clen = clen
+		add_child(boulder)
+
 
 # ── Helpers de senda ──────────────────────────────────────────────────
 
 func _build_curve() -> void:
-	for wp in WAYPOINTS:
+	var wps: Array = def.waypoints
+	for wp in wps:
 		curve.add_point(wp)
-	for i in WAYPOINTS.size():
-		var prev := WAYPOINTS[maxi(i - 1, 0)]
-		var next := WAYPOINTS[mini(i + 1, WAYPOINTS.size() - 1)]
-		var dir := (next - prev) * 0.22
+	for i in wps.size():
+		var prev: Vector3 = wps[maxi(i - 1, 0)]
+		var next: Vector3 = wps[mini(i + 1, wps.size() - 1)]
+		var dir: Vector3 = (next - prev) * 0.22
 		curve.set_point_in(i, -dir)
 		curve.set_point_out(i, dir)
 	clen = curve.get_baked_length()
@@ -133,7 +97,7 @@ func _pos(d: float, lat: float = 0.0, dy: float = 0.0) -> Vector3:
 
 
 func _in_gap(d: float, margin: float = 0.0) -> bool:
-	for g in GAPS:
+	for g in gaps:
 		if d > g[0] - margin and d < g[1] + margin:
 			return true
 	return false
@@ -143,10 +107,10 @@ func _in_gap(d: float, margin: float = 0.0) -> bool:
 
 func _build_environment() -> void:
 	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color(0.22, 0.52, 0.93)
-	sky_mat.sky_horizon_color = Color(0.72, 0.86, 0.96)
+	sky_mat.sky_top_color = def.sky_top
+	sky_mat.sky_horizon_color = def.sky_horizon
 	sky_mat.ground_bottom_color = Color(0.2, 0.3, 0.25)
-	sky_mat.ground_horizon_color = Color(0.7, 0.84, 0.92)
+	sky_mat.ground_horizon_color = def.sky_horizon
 	var sky := Sky.new()
 	sky.sky_material = sky_mat
 
@@ -163,7 +127,7 @@ func _build_environment() -> void:
 	env.ssao_enabled = true
 	env.ssao_intensity = 1.4
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.76, 0.88, 0.95)
+	env.fog_light_color = def.sky_horizon
 	env.fog_density = 0.0028
 	env.fog_sky_affect = 0.25
 	env.adjustment_enabled = true
@@ -176,7 +140,7 @@ func _build_environment() -> void:
 
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-48, -32, 0)
-	sun.light_color = Color(1.0, 0.96, 0.86)
+	sun.light_color = def.sun_color
 	sun.light_energy = 1.2
 	sun.shadow_enabled = true
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
@@ -228,11 +192,9 @@ func _build_ground() -> void:
 				var k := _rng.randf_range(-0.08, 0.08)
 				_quad(st, a[i], a[i + 1], b[i + 1], b[i],
 					jitter.call(cols[i], k), jitter.call(cols[i + 1], k))
-			# faldones laterales hasta el agua
 			_quad(st, a[0] + skirt_a, a[0], b[0], b[0] + skirt_b, rock, rock)
 			_quad(st, a[3], a[3] + skirt_a, b[3] + skirt_b, b[3], rock, rock)
 		else:
-			# tapas frontales en los bordes del hueco
 			if r > 0 and row_solid[r - 1] and not _in_gap((r - 0.5) * step):
 				for i in 3:
 					_quad(st, a[i + 1], a[i], a[i] + skirt_a,
@@ -318,30 +280,30 @@ func _build_beach() -> void:
 	body.position = base + Vector3.DOWN * 1.55
 	add_child(body)
 
-	# barco varado en el agua
-	var boat := Node3D.new()
-	var hull_mat := StandardMaterial3D.new()
-	hull_mat.albedo_color = Color(0.35, 0.22, 0.1)
-	hull_mat.roughness = 0.9
-	var sail_mat := StandardMaterial3D.new()
-	sail_mat.albedo_color = Color(0.93, 0.9, 0.8)
-	for part in [
-		[Vector3(2.4, 1.2, 6.5), Vector3(0, 0.6, 0), hull_mat],
-		[Vector3(2.8, 0.5, 7.2), Vector3(0, 1.3, 0), hull_mat],
-		[Vector3(0.22, 5.0, 0.22), Vector3(0, 3.6, 0.4), hull_mat],
-		[Vector3(0.1, 2.8, 2.4), Vector3(0, 4.2, 0.4), sail_mat],
-	]:
-		var bm := BoxMesh.new()
-		bm.size = part[0]
-		var bmi := MeshInstance3D.new()
-		bmi.mesh = bm
-		bmi.material_override = part[2]
-		bmi.position = part[1]
-		boat.add_child(bmi)
-	boat.position = base + _fwd(2.0).cross(Vector3.UP) * 14.0 + Vector3(0, WATER_Y + 0.4 - base.y, 4.0) + Vector3.UP * base.y
-	boat.position.y = WATER_Y + 0.4
-	boat.rotation.y = 0.5
-	add_child(boat)
+	if Game.level_index == 0:
+		var boat := Node3D.new()
+		var hull_mat := StandardMaterial3D.new()
+		hull_mat.albedo_color = Color(0.35, 0.22, 0.1)
+		hull_mat.roughness = 0.9
+		var sail_mat := StandardMaterial3D.new()
+		sail_mat.albedo_color = Color(0.93, 0.9, 0.8)
+		for part in [
+			[Vector3(2.4, 1.2, 6.5), Vector3(0, 0.6, 0), hull_mat],
+			[Vector3(2.8, 0.5, 7.2), Vector3(0, 1.3, 0), hull_mat],
+			[Vector3(0.22, 5.0, 0.22), Vector3(0, 3.6, 0.4), hull_mat],
+			[Vector3(0.1, 2.8, 2.4), Vector3(0, 4.2, 0.4), sail_mat],
+		]:
+			var bm := BoxMesh.new()
+			bm.size = part[0]
+			var bmi := MeshInstance3D.new()
+			bmi.mesh = bm
+			bmi.material_override = part[2]
+			bmi.position = part[1]
+			boat.add_child(bmi)
+		boat.position = base + _fwd(2.0).cross(Vector3.UP) * 14.0
+		boat.position.y = WATER_Y + 0.4
+		boat.rotation.y = 0.5
+		add_child(boat)
 
 
 # ── Jungla con MultiMesh ──────────────────────────────────────────────
@@ -361,8 +323,6 @@ func _extract_mesh(scene: PackedScene) -> Mesh:
 	var mi := _find_mesh_instance(inst)
 	var mesh: Mesh = null
 	if mi:
-		# duplicar y copiar los materiales activos: el MultiMesh no hereda
-		# los overrides del MeshInstance3D importado
 		mesh = mi.mesh.duplicate()
 		for i in mesh.get_surface_count():
 			var mat := mi.get_active_material(i)
@@ -398,7 +358,6 @@ func _build_jungle() -> void:
 	while d < clen - 8.0:
 		for side_sign: float in [-1.0, 1.0]:
 			if _rng.randf() < 0.82:
-				# pegados al borde, con el tronco hundido en el acantilado
 				var lat := side_sign * (HALF_W + 1.2 + _rng.randf() * 2.6)
 				var p := _pos(d + _rng.randf_range(-1.0, 1.0), lat, 0.0)
 				p.y -= _rng.randf_range(1.2, 3.0)
@@ -406,7 +365,6 @@ func _build_jungle() -> void:
 				var basis := Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3.ONE * s)
 				transforms.append(Transform3D(basis, p))
 		d += 2.4
-	# capa lejana de árboles gigantes
 	d = 0.0
 	while d < clen:
 		for side_sign: float in [-1.0, 1.0]:
@@ -419,7 +377,6 @@ func _build_jungle() -> void:
 		d += 7.0
 	_multimesh(tree_mesh, transforms)
 
-	# arbustos
 	var bush := SphereMesh.new()
 	bush.radius = 0.6
 	bush.height = 0.8
@@ -438,7 +395,6 @@ func _build_jungle() -> void:
 		d += 3.0
 	_multimesh(bush, bush_tf)
 
-	# rocas
 	var rock := SphereMesh.new()
 	rock.radius = 0.5
 	rock.height = 0.7
@@ -464,25 +420,31 @@ func _build_ruins() -> void:
 	if col_mesh:
 		var aabb := col_mesh.get_aabb()
 		var tf: Array = []
-		for r in RUIN_COLUMNS:
-			var s: float = r[2] / maxf(aabb.size.y, 0.01)
-			var p := _pos(r[0], r[1], -0.15)
-			tf.append(Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3.ONE * s), p))
+		var d := 40.0
+		while d < clen - 30.0:
+			var lat := 5.5 * (1.0 if int(d / 35.0) % 2 == 0 else -1.0)
+			var s: float = _rng.randf_range(2.4, 3.4) / maxf(aabb.size.y, 0.01)
+			tf.append(Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3.ONE * s),
+				_pos(d, lat, -0.15)))
+			d += 35.0
 		_multimesh(col_mesh, tf)
 	if block_mesh:
 		var aabb := block_mesh.get_aabb()
 		var tf: Array = []
-		for r in RUIN_BLOCKS:
+		var d := 60.0
+		while d < clen - 30.0:
+			var lat := 4.5 * (-1.0 if int(d / 70.0) % 2 == 0 else 1.0)
 			var s: float = 1.6 / maxf(aabb.size.y, 0.01)
-			var p := _pos(r[0], r[1], -0.45)
-			tf.append(Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3.ONE * s), p))
+			tf.append(Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3.ONE * s),
+				_pos(d, lat, -0.45)))
+			d += 70.0
 		_multimesh(block_mesh, tf)
 
 
 # ── Entidades ─────────────────────────────────────────────────────────
 
 func _build_crates() -> void:
-	for c in CRATES:
+	for c in def.crates:
 		var crate := StaticBody3D.new()
 		crate.set_script(CrateScript)
 		crate.is_tnt = c[2]
@@ -492,22 +454,26 @@ func _build_crates() -> void:
 
 
 func _build_coins() -> void:
-	for run in COIN_RUNS:
-		for i in run[1]:
-			var d: float = run[0] + i * 1.7
-			if _in_gap(d, 0.6):
-				continue
-			_spawn_coin(_pos(d, run[2], 0.95))
+	# tramos de monedas genéricos cada ~22 m
+	var d := 12.0
+	var lane := 0
+	while d < clen - 24.0:
+		var lat: float = [0.0, 1.4, -1.4][lane % 3]
+		lane += 1
+		for i in 6:
+			var cd := d + i * 1.7
+			if not _in_gap(cd, 0.6):
+				_spawn_coin(_pos(cd, lat, 0.95))
+		d += 22.0
 	# arcos sobre los huecos
-	for g in GAPS:
+	for g in gaps:
 		var d0: float = g[0] - 1.5
 		var d1: float = g[1] + 1.5
 		var y0 := curve.sample_baked(clampf(d0, 0, clen)).y
 		var y1 := curve.sample_baked(clampf(d1, 0, clen)).y
 		for i in 5:
 			var t := i / 4.0
-			var d := lerpf(d0, d1, t)
-			var p := _pos(d, 0.0, 0.0)
+			var p := _pos(lerpf(d0, d1, t), 0.0, 0.0)
 			p.y = lerpf(y0, y1, t) + 1.0 + sin(t * PI) * 1.7
 			_spawn_coin(p)
 
@@ -520,7 +486,7 @@ func _spawn_coin(p: Vector3) -> void:
 
 
 func _build_enemies() -> void:
-	for e in ENEMIES:
+	for e in def.enemies:
 		var enemy := CharacterBody3D.new()
 		enemy.set_script(EnemyScript)
 		var visuals: Node3D = preload("res://assets/models/conquistador_lowpoly.glb").instantiate()
@@ -536,11 +502,12 @@ func _build_enemies() -> void:
 		enemy.position = _pos(e[0], e[1], 0.6)
 		var dir := _fwd(e[0]).cross(Vector3.UP) if e[2] else _fwd(e[0])
 		enemy.patrol_vec = dir * 2.5
+		enemy.speed_mult = def.enemy_speed
 		add_child(enemy)
 
 
 func _build_checkpoints() -> void:
-	for c in CHECKPOINTS:
+	for c in def.checkpoints:
 		var cp := Area3D.new()
 		cp.set_script(CheckpointScript)
 		cp.position = _pos(c[0], c[1], 0.0)
@@ -549,18 +516,25 @@ func _build_checkpoints() -> void:
 
 
 func _build_idols() -> void:
-	for idata in IDOLS:
+	for idata in def.idols:
 		var base := _pos(idata[0], idata[1], 0.0)
-		var path_y := curve.sample_baked(clampf(idata[0], 0, clen)).y
-		base.y = path_y + idata[2]
-		_stone_platform(base, Vector3(2.8, 0.5, 2.8))
+		if idata[2] > 0.0:
+			var path_y := curve.sample_baked(clampf(idata[0], 0, clen)).y
+			base.y = path_y + idata[2]
+			_stone_platform(base, Vector3(2.8, 0.5, 2.8))
+			base += Vector3.UP * 0.25
 		var idol := Area3D.new()
 		idol.set_script(IdolScript)
-		idol.position = base + Vector3.UP * 0.25
+		idol.position = base
 		add_child(idol)
-		# un par de monedas como pista visual
-		_spawn_coin(_pos(idata[0], idata[1] * 0.45, 1.1))
-		_spawn_coin(_pos(idata[0], idata[1] * 0.72, 1.3))
+
+
+func _build_masks() -> void:
+	for m in def.masks:
+		var mask := Area3D.new()
+		mask.set_script(MaskScript)
+		mask.position = _pos(m[0], m[1], 1.2)
+		add_child(mask)
 
 
 func _stone_platform(pos: Vector3, size: Vector3) -> void:
@@ -584,7 +558,7 @@ func _stone_platform(pos: Vector3, size: Vector3) -> void:
 
 
 func _build_spikes() -> void:
-	for s in SPIKES:
+	for s in def.spikes:
 		var trap := Node3D.new()
 		trap.set_script(SpikeScript)
 		trap.phase_offset = s[2]
@@ -592,9 +566,9 @@ func _build_spikes() -> void:
 		add_child(trap)
 
 
-# ── Templo final ──────────────────────────────────────────────────────
+# ── Final del nivel: templo+meta, santuario, o arena del jefe ─────────
 
-func _build_temple() -> void:
+func _build_finale() -> void:
 	var end_pos := curve.sample_baked(clen)
 	var u := _fwd(clen)
 	var center := end_pos + u * 14.0
@@ -606,18 +580,13 @@ func _build_temple() -> void:
 	var stone_dark := StandardMaterial3D.new()
 	stone_dark.albedo_color = Color(0.5, 0.45, 0.34)
 	stone_dark.roughness = 0.95
-	var red_paint := StandardMaterial3D.new()
-	red_paint.albedo_color = Color(0.72, 0.1, 0.06)
-	red_paint.roughness = 0.7
-	red_paint.emission_enabled = true
-	red_paint.emission = Color(0.4, 0.03, 0.01)
-	red_paint.emission_energy_multiplier = 0.5
 
-	# plaza
+	# plaza (más grande si hay jefe)
+	var plaza_r := 17.0 if not def.boss else 19.0
 	var plaza := StaticBody3D.new()
 	var pl_mesh := CylinderMesh.new()
-	pl_mesh.top_radius = 17.0
-	pl_mesh.bottom_radius = 19.0
+	pl_mesh.top_radius = plaza_r
+	pl_mesh.bottom_radius = plaza_r + 2.0
 	pl_mesh.height = 3.0
 	var pl_mi := MeshInstance3D.new()
 	pl_mi.mesh = pl_mesh
@@ -625,17 +594,52 @@ func _build_temple() -> void:
 	plaza.add_child(pl_mi)
 	var pl_col := CollisionShape3D.new()
 	var pl_shape := CylinderShape3D.new()
-	pl_shape.radius = 17.0
+	pl_shape.radius = plaza_r
 	pl_shape.height = 3.0
 	pl_col.shape = pl_shape
 	plaza.add_child(pl_col)
 	plaza.position = center + Vector3.DOWN * 1.5
 	add_child(plaza)
 
-	# pirámide escalonada
+	# columnas flanqueando la llegada
+	var col_mesh := _extract_mesh(RUIN_SCENE)
+	if col_mesh:
+		var aabb := col_mesh.get_aabb()
+		var s := 3.4 / maxf(aabb.size.y, 0.01)
+		var tf: Array = []
+		var side := u.cross(Vector3.UP)
+		for side_sign: float in [-1.0, 1.0]:
+			tf.append(Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3.ONE * s),
+				end_pos + u * 4.0 + side * side_sign * 5.0))
+		if def.boss:
+			# anillo de columnas alrededor de la arena
+			for k in 6:
+				var ang := TAU * k / 6.0 + 0.4
+				tf.append(Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3.ONE * s),
+					center + Vector3(cos(ang), 0, sin(ang)) * (plaza_r - 2.0)))
+		_multimesh(col_mesh, tf)
+
+	if def.boulder:
+		# santuario sencillo con el ídolo-meta
+		_stone_platform(center + Vector3.UP * 0.4, Vector3(5.0, 0.8, 5.0))
+		var goal := Area3D.new()
+		goal.set_script(IdolScript)
+		goal.is_goal = true
+		goal.position = center + Vector3.UP * 0.9
+		add_child(goal)
+		return
+
+	# pirámide (al fondo de la plaza; decorativa, la meta va delante)
+	var temple_c := center + u * 7.0 if not def.boss else center + u * (plaza_r + 8.0)
 	var temple := StaticBody3D.new()
-	temple.position = center
+	temple.position = temple_c
 	add_child(temple)
+	var red_paint := StandardMaterial3D.new()
+	red_paint.albedo_color = Color(0.72, 0.1, 0.06)
+	red_paint.roughness = 0.7
+	red_paint.emission_enabled = true
+	red_paint.emission = Color(0.4, 0.03, 0.01)
+	red_paint.emission_energy_multiplier = 0.5
 	var widths := [20.0, 16.6, 13.2, 9.8, 6.4]
 	var step_h := 1.2
 	var y := 0.0
@@ -663,53 +667,39 @@ func _build_temple() -> void:
 		temple.add_child(col)
 		y += step_h
 
-	# rampa de acceso orientada hacia la senda
 	var total_h := step_h * widths.size()
-	var bottom := center - u * 14.0
-	var top := center - u * 2.6 + Vector3.UP * total_h
-	var mid := (bottom + top) * 0.5
-	var ramp_len := bottom.distance_to(top) + 1.2
-	var ramp := StaticBody3D.new()
-	var ramp_mesh := BoxMesh.new()
-	ramp_mesh.size = Vector3(3.4, 0.35, ramp_len)
-	var ramp_mi := MeshInstance3D.new()
-	ramp_mi.mesh = ramp_mesh
-	ramp_mi.material_override = stone
-	ramp.add_child(ramp_mi)
-	var ramp_col := CollisionShape3D.new()
-	var ramp_shape := BoxShape3D.new()
-	ramp_shape.size = ramp_mesh.size
-	ramp_col.shape = ramp_shape
-	ramp.add_child(ramp_col)
-	ramp.transform = Transform3D(Basis.looking_at((top - bottom).normalized(), Vector3.UP), mid)
-	add_child(ramp)
 
-	# ídolo-meta en la cima
+	if def.boss:
+		var boss := CharacterBody3D.new()
+		boss.set_script(BossScript)
+		boss.arena_center = center
+		boss.goal_script = IdolScript
+		boss.position = center + u * 6.0 + Vector3.UP * 0.5
+		add_child(boss)
+		for side_sign: float in [-1.0, 1.0]:
+			var torch := OmniLight3D.new()
+			torch.light_color = Color(1.0, 0.5, 0.15)
+			torch.light_energy = 2.4
+			torch.omni_range = 12.0
+			torch.position = center + u.cross(Vector3.UP) * side_sign * (plaza_r - 3.0) \
+				+ Vector3.UP * 3.0
+			add_child(torch)
+		return
+
+	# meta sobre un pedestal en la plaza, frente a la pirámide
+	var goal_pos := center - u * 6.0
+	goal_pos.y = center.y
+	_stone_platform(goal_pos + Vector3.DOWN * 0.25, Vector3(4.0, 0.5, 4.0))
 	var goal := Area3D.new()
 	goal.set_script(IdolScript)
 	goal.is_goal = true
-	goal.position = center + Vector3.UP * (total_h + 0.1)
+	goal.position = goal_pos + Vector3.UP * 0.3
 	add_child(goal)
 
-	# antorchas en la cima
 	for side_sign: float in [-1.0, 1.0]:
 		var torch := OmniLight3D.new()
 		torch.light_color = Color(1.0, 0.6, 0.2)
 		torch.light_energy = 2.0
 		torch.omni_range = 8.0
-		var side := u.cross(Vector3.UP)
-		torch.position = center + side * side_sign * 3.4 - u * 3.0 \
-			+ Vector3.UP * (total_h + 1.2)
+		torch.position = goal_pos + u.cross(Vector3.UP) * side_sign * 3.0 + Vector3.UP * 1.5
 		add_child(torch)
-
-	# columnas flanqueando la llegada
-	var col_mesh := _extract_mesh(RUIN_SCENE)
-	if col_mesh:
-		var aabb := col_mesh.get_aabb()
-		var s := 3.4 / maxf(aabb.size.y, 0.01)
-		var tf: Array = []
-		var side := u.cross(Vector3.UP)
-		for side_sign: float in [-1.0, 1.0]:
-			var p := end_pos + u * 4.0 + side * side_sign * 5.0
-			tf.append(Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3.ONE * s), p))
-		_multimesh(col_mesh, tf)

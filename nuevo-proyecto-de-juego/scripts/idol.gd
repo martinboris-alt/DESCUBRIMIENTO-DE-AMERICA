@@ -70,10 +70,18 @@ func _ready() -> void:
 		add_child(beam)
 
 	var col := CollisionShape3D.new()
-	var sphere := SphereShape3D.new()
-	sphere.radius = 1.3 * s
-	col.shape = sphere
-	col.position.y = 0.5 * s
+	if is_goal:
+		# meta: disparador alto y ancho para capturar cualquier llegada
+		var cap := CapsuleShape3D.new()
+		cap.radius = 2.6
+		cap.height = 9.0
+		col.shape = cap
+		col.position.y = 2.0
+	else:
+		var sphere := SphereShape3D.new()
+		sphere.radius = 1.3 * s
+		col.shape = sphere
+		col.position.y = 0.5 * s
 	add_child(col)
 
 	monitorable = false
@@ -91,7 +99,7 @@ func _on_body(body: Node3D) -> void:
 		return
 	_taken = true
 	if is_goal:
-		Game.win()
+		Game.goal_reached()
 		return
 	Game.add_idol()
 	Sfx.play("idol")

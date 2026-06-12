@@ -134,6 +134,24 @@ save("tnt_boom.wav", boom, 0.85)
 
 save("step.wav", noise_burst(0.05, 0.5, 25, 0.3), 0.25)
 
+# ── Retumbo de la bola (loop 4s) ──────────────────────────────────────
+rum_n = SR * 4
+rum = [0.0] * rum_n
+prev = 0.0
+prev2 = 0.0
+for i in range(rum_n):
+    s = random.uniform(-1, 1)
+    prev += 0.02 * (s - prev)
+    prev2 += 0.08 * (prev - prev2)
+    rum[i] = prev2 * 3.0
+for k in range(8):
+    mix(rum, tone(40 + random.uniform(-5, 5), 0.35, 0.8, 6), k * 0.5 + random.uniform(0, 0.1))
+fade = SR // 2
+for i in range(fade):
+    k = i / fade
+    rum[i] = rum[i] * k + rum[rum_n - fade + i] * (1 - k)
+save("rumble.wav", rum[: rum_n - fade], 0.8)
+
 # ── Ambiente jungla (loop 12s) ────────────────────────────────────────
 amb_n = SR * 12
 amb = [0.0] * amb_n
